@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temporal - Count Every Moment</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #1a1a24;
+            --accent-gold: #d4af37;
+            --accent-blue: #4a9eff;
+            --text-primary: #f5f5f7;
+            --text-secondary: #a1a1a6;
+            --border-subtle: rgba(212, 175, 55, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated background gradient */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(212, 175, 55, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(74, 158, 255, 0.06) 0%, transparent 50%);
+            animation: drift 20s ease-in-out infinite alternate;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes drift {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            100% { transform: translate(10%, 10%) rotate(10deg); }
+        }
+
+        /* Grain texture overlay */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
+            opacity: 0.5;
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            font-weight: 400;
+            background: linear-gradient(135deg, var(--accent-gold) 0%, var(--text-primary) 50%, var(--accent-blue) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .timers-grid {
+            display: grid;
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .timer-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 16px;
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.6s ease-out backwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .timer-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-gold);
+            box-shadow: 0 12px 40px rgba(212, 175, 55, 0.1);
+        }
+
+        .timer-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-gold), transparent);
+            transform: translateX(-100%);
+        }
+
+        .timer-card:hover::before {
+            animation: shimmer 1.5s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0%, 100% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+        }
+
+        .timer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .timer-label {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .timer-type {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: rgba(212, 175, 55, 0.1);
+            color: var(--accent-gold);
+        }
+
+        .timer-type.countup {
+            background: rgba(74, 158, 255, 0.1);
+            color: var(--accent-blue);
+        }
+
+        .time-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .time-unit {
+            text-align: center;
+        }
+
+        .time-value {
+            font-family: 'DM Serif Display', serif;
+            font-size: clamp(2rem, 4vw, 3.5rem);
+            font-weight: 400;
+            color: var(--accent-gold);
+            display: block;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .time-unit.countup .time-value {
+            color: var(--accent-blue);
+        }
+
+        .time-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 500;
+        }
+
+        .timer-date {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid var(--border-subtle);
+            background: transparent;
+            color: var(--text-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Manrope', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            background: rgba(212, 175, 55, 0.1);
+            border-color: var(--accent-gold);
+            transform: translateY(-1px);
+        }
+
+        .btn.delete:hover {
+            background: rgba(255, 59, 48, 0.1);
+            border-color: #ff3b30;
+            color: #ff3b30;
+        }
+
+        .new-timer-section {
+            background: var(--bg-secondary);
+            border: 2px dashed var(--border-subtle);
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            animation: fadeInUp 0.8s ease-out 0.2s backwards;
+        }
+
+        .new-timer-section h2 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 1.8rem;
+            margin-bottom: 24px;
+            color: var(--text-primary);
+        }
+
+        .input-group {
+            max-width: 500px;
+            margin: 0 auto 16px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Manrope', sans-serif;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-gold) 0%, #c49a2e 100%);
+            color: var(--bg-primary);
+            border: none;
+            padding: 14px 32px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(212, 175, 55, 0.3);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        @media (max-width: 768px) {
+            .time-display {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .timer-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+        }
+
+        /* PWA Install prompt */
+        .install-prompt {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--accent-gold);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            animation: slideInRight 0.4s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .install-prompt.show {
+            display: flex;
+        }
+
+        .install-btn {
+            background: var(--accent-gold);
+            color: var(--bg-primary);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .close-prompt {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Temporal</h1>
+            <p class="subtitle">Count Every Moment</p>
+        </header>
+
+        <div id="timersContainer" class="timers-grid">
+            <!-- Timers will be inserted here -->
+        </div>
+
+        <div class="new-timer-section">
+            <h2>Create New Timer</h2>
+            <div class="input-group">
+                <label for="timerLabel">Timer Label</label>
+                <input type="text" id="timerLabel" placeholder="e.g., My Birthday, Wedding Day, Project Launch" />
+            </div>
+            <div class="input-group">
+                <label for="timerDate">Date & Time</label>
+                <input type="datetime-local" id="timerDate" />
+            </div>
+            <button class="btn-primary" onclick="addTimer()">Create Timer</button>
+        </div>
+    </div>
+
+    <!-- PWA Install Prompt -->
+    <div class="install-prompt" id="installPrompt">
+        <span>📱 Install Temporal as an app</span>
+        <button class="install-btn" id="installBtn">Install</button>
+        <button class="close-prompt" onclick="closeInstallPrompt()">×</button>
+    </div>
+
+    <script>
+        // Timer storage and management
+        let timers = JSON.parse(localStorage.getItem('timers')) || [];
+        let updateInterval;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            renderTimers();
+            startUpdating();
+            setupPWA();
+        });
+
+        function addTimer() {
+            const label = document.getElementById('timerLabel').value.trim();
+            const dateTime = document.getElementById('timerDate').value;
+
+            if (!label || !dateTime) {
+                alert('Please fill in both the label and date/time');
+                return;
+            }
+
+            const timer = {
+                id: Date.now(),
+                label: label,
+                targetDate: new Date(dateTime).toISOString(),
+                createdAt: new Date().toISOString()
+            };
+
+            timers.push(timer);
+            saveTimers();
+            renderTimers();
+
+            // Clear inputs
+            document.getElementById('timerLabel').value = '';
+            document.getElementById('timerDate').value = '';
+        }
+
+        function deleteTimer(id) {
+            if (confirm('Are you sure you want to delete this timer?')) {
+                timers = timers.filter(t => t.id !== id);
+                saveTimers();
+                renderTimers();
+            }
+        }
+
+        function editTimer(id) {
+            const timer = timers.find(t => t.id === id);
+            if (!timer) return;
+
+            const newLabel = prompt('Enter new label:', timer.label);
+            if (newLabel !== null && newLabel.trim()) {
+                timer.label = newLabel.trim();
+                saveTimers();
+                renderTimers();
+            }
+        }
+
+        function saveTimers() {
+            localStorage.setItem('timers', JSON.stringify(timers));
+        }
+
+        function renderTimers() {
+            const container = document.getElementById('timersContainer');
+            
+            if (timers.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⏱️</div>
+                        <p>No timers yet. Create your first one below!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = timers.map((timer, index) => {
+                const { display, isCountUp } = calculateTimeDifference(timer.targetDate);
+                const formattedDate = new Date(timer.targetDate).toLocaleString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                return `
+                    <div class="timer-card" style="animation-delay: ${index * 0.1}s">
+                        <div class="timer-header">
+                            <div class="timer-label">${escapeHtml(timer.label)}</div>
+                            <div class="timer-type ${isCountUp ? 'countup' : 'countdown'}">
+                                ${isCountUp ? 'Count Up' : 'Countdown'}
+                            </div>
+                        </div>
+                        <div class="time-display">
+                            <div class="time-unit ${isCountUp ? 'countup' : ''}">
+                                <span class="time-value">${display.days}</span>
+                                <span class="time-label">Days</span>
+                            </div>
+                            <div class="time-unit ${isCountUp ? 'countup' : ''}">
+                                <span class="time-value">${display.hours}</span>
+                                <span class="time-label">Hours</span>
+                            </div>
+                            <div class="time-unit ${isCountUp ? 'countup' : ''}">
+                                <span class="time-value">${display.minutes}</span>
+                                <span class="time-label">Minutes</span>
+                            </div>
+                            <div class="time-unit ${isCountUp ? 'countup' : ''}">
+                                <span class="time-value">${display.seconds}</span>
+                                <span class="time-label">Seconds</span>
+                            </div>
+                        </div>
+                        <div class="timer-date">${formattedDate}</div>
+                        <div class="actions">
+                            <button class="btn" onclick="editTimer(${timer.id})">Edit</button>
+                            <button class="btn delete" onclick="deleteTimer(${timer.id})">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function calculateTimeDifference(targetDate) {
+            const now = new Date();
+            const target = new Date(targetDate);
+            const diff = target - now;
+            const isCountUp = diff < 0;
+            const absDiff = Math.abs(diff);
+
+            const days = Math.floor(absDiff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((absDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((absDiff % (1000 * 60)) / 1000);
+
+            return {
+                display: {
+                    days: String(days).padStart(2, '0'),
+                    hours: String(hours).padStart(2, '0'),
+                    minutes: String(minutes).padStart(2, '0'),
+                    seconds: String(seconds).padStart(2, '0')
+                },
+                isCountUp
+            };
+        }
+
+        function startUpdating() {
+            updateInterval = setInterval(() => {
+                renderTimers();
+            }, 1000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // PWA Support
+        let deferredPrompt;
+
+        function setupPWA() {
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                document.getElementById('installPrompt').classList.add('show');
+            });
+
+            document.getElementById('installBtn').addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+                
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                
+                if (outcome === 'accepted') {
+                    console.log('PWA installed');
+                }
+                
+                deferredPrompt = null;
+                closeInstallPrompt();
+            });
+        }
+
+        function closeInstallPrompt() {
+            document.getElementById('installPrompt').classList.remove('show');
+        }
+
+        // Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // Service worker would be registered here in production
+                console.log('Service worker support detected');
+            });
+        }
+    </script>
+</body>
+</html>
